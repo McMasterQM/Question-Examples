@@ -2,28 +2,27 @@
 import numpy as np
 import re
 import os
-from numpy.testing import assert_equal, assert_allclose
+from distutils.util import strtobool
 
 
-
-d_pat = r'\d+.\d*'
+dpat_int = r'\d+'
 let_pat = r'[A-Z]'
 right_answers = [
     {'A', 'B', 'E'},
     {'A', 'C', 'E', 'F'},
-    {'F'},
-    {'F'},
+    False,
+    False,
     3.139e-19,
     5.996e14,
-    2,
-    2,
+    2.,
+    2.,
     {"A":2, "B":3, "C":1, "D":4},
     {"A":1, "B":2}
 ]
 
 i = 0
 score = 0
-answer = '**Answer**'
+answer = '**Answer'
 
 path = os.getcwd()
 with open(os.path.join(path, 'problem', 'm_choice.py'), 'r') as f:
@@ -33,20 +32,46 @@ with open(os.path.join(path, 'problem', 'm_choice.py'), 'r') as f:
             true_answer = right_answers[i]
 
             ind = line.find(answer) + len(answer)
-            new_line = line.upper()[ind:]
-            answers_digits = [float(x) for x in re.findall(d_pat, new_line)]
 
             if isinstance(true_answer, dict):
+                new_line = line.upper()[ind:]
+                answers_digits = [int(x) for x in re.findall(dpat_int, new_line)]
+
                 answers_letters = re.findall(let_pat, new_line)
                 answer_dct = dict(zip(answers_letters, answers_digits))
                 if answer_dct == true_answer:
                     score += 1
+                else:
+                    print(line)
 
-            else:
+            elif isinstance(true_answer, set):
+                new_line = line.upper()[ind:]
                 answers_letters = set(re.findall(let_pat, new_line))
-                if answers_letters == right_answers[i] or\
-                    (len(answers_digits) > 0 and np.allclose(answers_digits, right_answers[i])):
+                if answers_letters == true_answer:
                     score += 1
+                else:
+                    print(line)
+
+            elif isinstance(true_answer, float):
+                new_line = line[ind:]
+                ind = re.search(dpat_int, new_line).start()
+                new_line = new_line[ind:].strip()
+
+                answer_digit = float(new_line)
+                if answer_digit == true_answer:
+                    score += 1
+                else:
+                    print(line)
+
+            elif isinstance(true_answer, bool):
+                new_line = line[ind:]
+                ind = re.search(let_pat, new_line).start()
+                answer_bool = strtobool(new_line[ind:].strip())
+                if answer_bool == true_answer:
+                    score += 1
+                else:
+                    print(line)
+
             i += 1
 
 
